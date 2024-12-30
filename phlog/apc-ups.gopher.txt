@@ -1,0 +1,6 @@
+sudo systemctl status apcupsd
+
+apcaccess status
+
+sudo journalctl -u apcupsd
+

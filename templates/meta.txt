@@ -1,0 +1,3 @@
+{{! For Phlog post meta. }}
+Posted: {{ date }}
+Tags: {{#tags}}{{ . }} {{/tags}}

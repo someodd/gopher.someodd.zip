@@ -1,0 +1,13 @@
+Hello, I'm someodd!
+
+I'm a software engineer with many years experience.
+
+I am a member of The Made: someodd@themade.org (museum for computers, video
+games).
+
+Likes, hobbies:
+
+* Body building, the gym
+* Mandarin
+* Gopher protocol
+* Haskell programming language

@@ -1,0 +1,9 @@
+Don't forget: your laptop can benefit from a firewall, too!
+
+```
+sudo apt-get install ufw
+sudo ufw default allow outgoing
+sudo ufw default deny incoming
+sudo ufw enable
+sudo ufw status verbose
+```

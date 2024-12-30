@@ -1,0 +1,16 @@
+---
+date: 2024-10-02
+parent: post.txt
+title: LyX: What You See is What You Mean
+tags: [latex]
+---
+
+https://www.baeldung.com/cs/lyx-tutorial
+
+You can actually export all kinds...
+
+commands like:
+
+```
+lyx --export text newfile3.lyx
+```

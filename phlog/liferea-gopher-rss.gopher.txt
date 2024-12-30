@@ -1,0 +1,14 @@
+---
+date: 2024-10-13
+parent: post.txt
+title: Liferea: subscribe to gopherspace feeds
+tags: [gopher, linux]
+---
+
+You can subscribe to this blog's Atom feed using Liferea.
+
+Just use this command (source type):
+
+```
+curl -s gopher://gopher.someodd.zip:70/0/phlog/atom.xml
+```

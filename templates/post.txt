@@ -1,0 +1,15 @@
+{{! For Phlog posts. }}
+
+{{#figlet}}
+small.flf
+{{title}}
+{{/figlet}}
+
+{{#containerize}}
+debug.bc
+{{> meta.txt }}
+{{/containerize}}
+
+{{#wrapVt320StandardMode}}
+{{> partial}}
+{{/wrapVt320StandardMode}}

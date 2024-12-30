@@ -1,0 +1,35 @@
+COPIED FROM: https://news.ycombinator.com/item?id=15912047
+
+My mate has an awesome story about providing technical support to him on campus. I hope neither he nor the deceased mind me relating it.
+
+"Hello. Tech support? This is Manfred von Thun. My computer is not working."
+
+"OK, no problem, do you have a PC or a Mac?"
+
+"Neither."
+
+<Pause>
+
+"Neither?"
+
+"Yes. Neither."
+
+"Ok, what do you have, then?"
+
+"I have a terminal which connects to the mainframe."
+
+<Pause>
+
+"OK, I'll be right over."
+
+Sure enough, he gets there and there's some godforsaken yellowing text-only terminal thing with a wire plugged into some weird port he'd never seen before, presumably wending its way into the bowels of the university to some long-lost, dusty piece of big iron from computing's distant past.
+
+My mate was incredulous. "So what do you do with this, exactly?"
+
+"I write papers, I write programs, I make web pages."
+
+"Web pages!?"
+
+"Yes, web pages. But I don't believe in graphics."
+
+In spite of his protestations about GUIs, he was eventually given a brand spanking new eMac (this was around about the time he was creating Joy). Once he saw Terminal.app, he no longer seemed particularly concerned.

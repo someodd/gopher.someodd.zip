@@ -1,0 +1,13 @@
+```
+#!/bin/bash
+rhythmbox-client --set-rating 1
+rhythmbox-client --next
+```
+
+chmod +x ~/.local/bin/1star.sh
+
+Then set to a global hotkey like ctrl alt 1.
+
+Maybe this should be a little note.
+
+i had to actually full path `/home/tilde/.local/bin/1star.sh` to work in gnome for keyboard shortcut

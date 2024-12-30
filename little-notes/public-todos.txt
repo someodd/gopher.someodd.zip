@@ -1,0 +1,11 @@
+here's my todo list for things i wanna get done in the someoddverse
+
+* move all the archives into archives/
+** should include downloads? archives_and_downloads/?
+* lyx article and integration with some software
+** script to export to html, pdf, and gopherspace (articles) and template
+* ted text rtf editor compile on modern debian? use nix?
+* article about liquidhaskell
+* article about isabelle integration to haskell
+* more archives of smaller content, maybe websites like wired on neocities
+

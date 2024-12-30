@@ -1,0 +1,149 @@
+calyxos accessing files on debian problem
+
+this shit is so buggy in linux
+
+gnome + debian
+
+```
+sudo apt update
+sudo apt install gvfs-backends mtp-tools jmtpfs
+```
+
+
+```
+mtp-detect
+
+libmtp version: 1.1.22
+
+Listing raw device(s)
+Device 0 (VID=18d1 and PID=4ee1) is a Google Inc Nexus/Pixel (MTP).
+   Found 1 device(s):
+   Google Inc: Nexus/Pixel (MTP) (18d1:4ee1) @ bus 3, dev 70
+Attempting to connect device(s)
+libusb_claim_interface() reports device is busy, likely in use by GVFS or KDE MTP device handling alreadyLIBMTP PANIC: Unable to initialize device
+Unable to open raw device 0
+OK.
+```
+
+idk why but:
+
+```
+➜  Downloads sudo systemctl restart udev
+systemctl --user restart gvfs-mtp-volume-monitor
+systemctl --user restart gvfs-daemon
+
+➜  Downloads sudo mtp-detect            
+libmtp version: 1.1.22
+
+Listing raw device(s)
+Device 0 (VID=18d1 and PID=4ee1) is a Google Inc Nexus/Pixel (MTP).
+   Found 1 device(s):
+   Google Inc: Nexus/Pixel (MTP) (18d1:4ee1) @ bus 3, dev 78
+Attempting to connect device(s)
+libusb_claim_interface() reports device is busy, likely in use by GVFS or KDE MTP device handling alreadyLIBMTP PANIC: Unable to initialize device
+Unable to open raw device 0
+OK.
+```
+ i think gvfs was locking device? shotwell in particular fucked it up...
+
+i also had to replug the usb cable after above command
+
+for shotwell i had to figure out some fanaggling because shotwell bungles trying to use its own mtp navigation to copy stuff but i had to make sure gnome could actually mount the pixel and then in shotwell i import that gnome mount. it'll take a really long time but it'll import!
+
+## Bonus: removing tiktok videos
+
+```
+find . -type f -regextype posix-extended -regex './[a-f0-9]{32}\.mp4'
+```
+
+above previews to target 32 character hexadecimal filename strings.
+
+delete after confirm:
+
+```
+find . -type f -regextype posix-extended -regex './[a-f0-9]{32}\.mp4' -delete
+```
+
+## bonus: script out of frustration
+
+make sur emounted and phone not go sleep
+
+shotwell took too long. honestly the thing i liked most about it was its ability to just copy stuff to good directories... this script will copy files if missing or newer jpgs and mp4s and put them neatly into some directories, sorting them for you
+
+note you'll need to change the gvfs mount for your mtp connection or whatever
+
+```
+#!/bin/bash
+
+# Target directories
+PICTURE_DIR=~/Pictures/PhoneCopyScript
+VIDEO_DIR=~/Videos/PhoneCopyScript
+
+# List of source directories
+SOURCE_DIRECTORIES=(
+    "/run/user/1000/gvfs/mtp:host=Google_Pixel_8_41061FDJH002KX/Internal shared storage"
+    # Add more directories here
+)
+
+# Create directories if they don't exist
+mkdir -p "$PICTURE_DIR"
+mkdir -p "$VIDEO_DIR"
+
+# Function to extract date from EXIF or fallback to modification time
+get_file_date() {
+    local file="$1"
+    local file_type="$2"
+
+    # Use EXIF date for images if available
+    if [[ "$file_type" == "image" ]]; then
+        exif_date=$(exiftool -s3 -d "%Y:%m" -DateTimeOriginal "$file" 2>/dev/null)
+        if [[ -n "$exif_date" ]]; then
+            echo "$exif_date"
+            return
+        fi
+    fi
+
+    # Fallback to modification date
+    echo "$(date -r "$file" +"%Y:%m")"
+}
+
+# Function to copy files if they are missing or newer
+copy_files() {
+    local file_type="$1"
+    local target_dir="$2"
+    shift 2
+    local extensions=("$@")
+
+    for src_dir in "${SOURCE_DIRECTORIES[@]}"; do
+        for ext in "${extensions[@]}"; do
+            find "$src_dir" -type f -iname "*.$ext" | while read -r file; do
+                # Extract year and month from EXIF or modification date
+                year_month=$(get_file_date "$file" "$file_type")
+                year=${year_month%%:*}
+                month=${year_month##*:}
+
+                # Determine target directory
+                target_path="$target_dir/$year/$month"
+                mkdir -p "$target_path"
+
+                # Check if the file needs to be copied
+                dest_file="$target_path/$(basename "$file")"
+                if [[ ! -e "$dest_file" ]] || [[ "$file" -nt "$dest_file" ]]; then
+                    cp "$file" "$dest_file"
+                    echo "Copied: $file -> $dest_file"
+                else
+                    echo "Skipped (already up to date): $file"
+                fi
+            done
+        done
+    done
+}
+
+# Copy jpg and png files to the Pictures directory
+copy_files "image" "$PICTURE_DIR" "jpg" "png"
+
+# Copy mp4 files to the Videos directory
+copy_files "video" "$VIDEO_DIR" "mp4"
+
+echo "File copying complete!"
+```

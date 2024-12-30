@@ -1,0 +1,136 @@
+---
+date: 2024-09-05
+parent: post.txt
+title: Archive using LTO Tape
+title: High latency: how DNS and NAT was to blame
+tags: [sysadmin, gopher, linux]
+---
+
+I have been experiencing problems with my gopherhole being very slow. The
+Gopher Protocol is very minimal and basically amounts to sending tiny text
+files for the most part.
+
+This article describes the process through which I figured out how to make my
+gopherhole fast.
+
+## My setup
+
+* Server is currently using a dynamic IP and thus needs a dynamic DNS provider
+  so I can keep updating the IP some domain points to
+* My domain registrar, which I use for DNS, simply points a `CNAME` record for
+  `gopher.someodd.zip` to `someodd.duckdns.org`
+* Two Gopher services running in two different Docker containers, accessible
+  via port 7070 and 7071 respectively
+* `xinetd` listens on port 70 and will forward to 7071 or 7070 depending on the
+  path/selector used. For example, `gopher://gopher.someodd.zip/phorum` will
+return a response it got from localhost 7071. I wrote an article on this setup
+* When I talk about "local" I'm speaking about "the same network the server is
+  on"
+
+## Preliminary troubleshooting
+
+I used `dig` and `nslookup` and found out that DuckDNS was experiencing
+extremely high latency. At such a point I probably should have tested
+accessing the server from its external IP address to be extra sure this
+was a DNS issue.
+
+Here's me testing from the same network as the server:
+
+```
+$ dig gopher.someodd.zip
+
+; <<>> DiG 9.20.1-1-Debian <<>> gopher.someodd.zip
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 60485
+;; flags: qr rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 65494
+;; QUESTION SECTION:
+;gopher.someodd.zip.		IN	A
+
+;; ANSWER SECTION:
+gopher.someodd.zip.	844	IN	CNAME	someodd.duckdns.org.
+someodd.duckdns.org.	60	IN	A	73.93.14.18
+
+;; Query time: 3403 msec
+;; SERVER: 127.0.0.53#53(127.0.0.53) (UDP)
+;; WHEN: Thu Sep 05 13:36:17 PDT 2024
+;; MSG SIZE  rcvd: 96
+
+$  gopherhole git:(master) nslookup gopher.someodd.zip
+Server:		127.0.0.53
+Address:	127.0.0.53#53
+
+Non-authoritative answer:
+gopher.someodd.zip	canonical name = someodd.duckdns.org.
+Name:	someodd.duckdns.org
+Address: 73.93.14.18
+;; communications error to 127.0.0.53#53: timed out
+;; communications error to 127.0.0.53#53: timed out
+;; communications error to 127.0.0.53#53: timed out
+;; no servers could be reached
+```
+
+`dig`: I believe the results above show an unusually high response time for the
+DNS resolution process (while inside the network).
+
+`nslookup`: I think the above results show problems with the local DNS resolver.
+
+I then tested adding this line to my `/etc/hosts`, which made browsing my gopherhole practially instantaneous:
+
+```
+192.168.1.100 gopher.someodd.zip
+```
+
+I removed the above entry after testing. At this point I became tasked with
+switching away from DuckDNS, especially after reading about other people's
+problems.
+
+## Switch from DuckDNS to Afraid.org
+
+I updated my DNS records (CNAME) on the domain registrar service I use (for
+someodd.zip) to point to the new Dynamic DNS service I signed up for:
+afraid.org.
+
+Afraid.org has been around for a long time, people seem to like the service and
+think it's reliable. I also liked that it uses FreeBSD.
+
+I felt that after switching to Afraid.org that the issues were mostly resolved.
+However, now, if I'm on the local network it now works very fast. If I'm
+outside the server's network the gopherhole works very slow on port 70, yet
+port 7070 and 7071 are fast.
+
+## NAT
+
+I started thinking that this was a NAT issue. For some reason I ran into the
+concept of NAT loopback/hairpin/reflect before when looking into some issue I
+think was related to XMPP.
+
+To just double-check DNS I tried accessing `gopher://[server ip here]` on the
+external network and it was still slow. I also used a DNS propagation checker
+and it looked like the CNAME records rolled over to `someodd.mooo.com` away
+from `someodd.duckdns.org`.
+
+I decided to test out the NAT loopback hypothesis. On the server's network router, I enabled NAT loopback/masquerading for my `LAN => WAN` zone.
+
+Once the router reloaded everything was working very quickly!
+
+I think for external users accessing the Gopher server, *masquerading* ensures
+that their requests are correctly mapped to the internal network and then back
+to the external network without introducing unnecessary delays or routing
+issues. Without this, the router might not know how to properly handle the
+return packets, leading to slow or failed connections.
+
+Also, I also think enabling masquerading often also improves NAT reflection
+(hairpinning), allowing devices on the internal network to access services via
+the public IP address. This may resolve routing issues where traffic gets sent
+out to the WAN unnecessarily and then back to the LAN.
+
+## Conclusion
+
+It's basically a joke at this point about how it's always DNS. I suppose in
+this case I think it was both a NAT *and* DNS issue.
+
+I'm glad my server nor code was to blame, actually!
